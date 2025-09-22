@@ -3,6 +3,8 @@ import 'dotenv/config'
 import { MongoClient } from 'mongodb'
 import { Request, Response } from 'express'
 
+import rotas from './rotas.js'
+
 const client = new MongoClient(process.env.MONGO_URI!)
 await client.connect()
 const db = client.db(process.env.MONGO_DB!)
