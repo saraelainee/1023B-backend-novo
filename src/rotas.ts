@@ -1,7 +1,7 @@
 import { Router } from "express";
 
-import carrinhoController from "./carrinho/carrinho.controller";
-import produtoController from "./produtos/produtos.controller";
+import carrinhoController from "./carrinho/carrinho.controller.js";
+import produtoController from "./produtos/produtos.controller.js";
 
 
 const rotas = Router();

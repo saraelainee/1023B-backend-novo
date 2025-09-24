@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { db } from "../database/banco-mongo";
+import { db } from "../database/banco-mongo.js";
 import bcrypt from 'bcryptjs'
 class UsuariosController{
     async adicionar(req:Request, res:Response){
