@@ -1,16 +1,19 @@
-import { Router } from "express";
+import {Router} from 'express'
 
-import carrinhoController from "./carrinho/carrinho.controller.js";
-import produtoController from "./produtos/produtos.controller.js";
+import carrinhoController from './carrinho/carrinho.controller.js'
+import produtosController from './produtos/produtos.controller.js'
 
-const rotas = Router();
+const rotas = Router()
 
-// rotas de carrinho
-rotas.get('/carrinho', carrinhoController.listar);
-//rotas.post('/carrinho', carrinhoController.adicionar);
+// Rotas do Carrinho
+//rotas.get('/carrinho',carrinhoController.listar)
+//rotas.post('/carrinho',carrinhoController.adicionar)
 
-// rotas de produtos
-rotas.get('/produtos', produtoController.listar);
-rotas.post('/produtos', produtoController.adicionar);
+// Rotas dos produtos
+rotas.get('/produtos',produtosController.listar)
+rotas.post('/produtos',produtosController.adicionar)
 
-export default rotas;
+rotas.post('/adicionarItem',carrinhoController.adicionarItem)
+
+
+export default rotas
