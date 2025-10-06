@@ -13,5 +13,5 @@ app.use(rotas)
 
 //Criando o servidor na porta 8000 com o express
 app.listen(8000, () => {
-    console.log('Server is running on port 8000')
+    console.log('Servidor rodando na porta 8000')
 })
