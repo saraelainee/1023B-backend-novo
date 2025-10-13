@@ -24,7 +24,7 @@ class CarrinhoController {
          //Buscar o produto no banco de dados
         const produto = await db.collection("produtos").findOne({ _id: ObjectId.createFromHexString(produtoId)});
         if (!produto) {
-            return res.status(400).json({ message: "Produto não encontrado" });
+            return res.status(400).json({ message: "Ops, produto não encontrado" });
         }
         //Pegar o preço do produto
         //Pegar o nome do produto
@@ -105,14 +105,14 @@ class CarrinhoController {
         const { usuarioId, produtoId, quantidade } = req.body;
         const carrinho = await db.collection<Carrinho>("carrinhos").findOne({ usuarioId: usuarioId });
         if (!carrinho) {
-            return res.status(404).json({ message: "Carrinho não encontrado" });
+            return res.status(404).json({ message: "Ops, carrinho não encontrado" });
         }
         const item = carrinho.itens.find(item => item.produtoId === produtoId);
         if (!item) {
-            return res.status(404).json({ message: "Item não encontrado no carrinho" });
+            return res.status(404).json({ message: "Ops, item não encontrado no carrinho" });
         }
         if (quantidade <= 0) {
-            return res.status(400).json({ message: "Quantidade deve ser maior que zero" });
+            return res.status(400).json({ message: "Ops, quantidade deve ser maior que zero" });
         }
         item.quantidade = quantidade;
         // Recalcular o total do carrinho
@@ -133,7 +133,7 @@ class CarrinhoController {
         }
         const carrinho = await db.collection<Carrinho>("carrinhos").findOne({ usuarioId: usuarioId});
         if (!carrinho) {
-            return res.status(404).json({ message: "Carrinho não encontrado" });
+            return res.status(404).json({ message: "Ops, carrinho não encontrado" });
         }
         return res.status(200).json(carrinho);
     }
@@ -142,9 +142,9 @@ class CarrinhoController {
         const { usuarioId } = req.params;
         const resultado = await db.collection("carrinhos").deleteOne({ usuarioId: usuarioId });
         if (resultado.deletedCount === 0) {
-            return res.status(404).json({ message: "Carrinho não encontrado" });
+            return res.status(404).json({ message: "Ops, carrinho não encontrado" });
         }
-        return res.status(200).json({ message: "Carrinho removido com sucesso" });
+        return res.status(200).json({ message: "Ops, carrinho removido com sucesso" });
     }
 }
 export default new CarrinhoController();
