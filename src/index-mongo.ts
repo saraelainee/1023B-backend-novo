@@ -3,9 +3,10 @@ import 'dotenv/config'
 import rotasAutenticadas from './rotas/rotas-autenticadas.js'
 import rotasNaoAutenticadas from './rotas/rotas-nao-autenticadas.js'
 import Auth from './middlewares/auth.js'
+import cors from 'cors'
+
 const app = express()
-//Esse middleware faz com que o 
-// express faça o parse do body da requisição para json 
+app.use(cors())
 
 app.use(express.json())
 
