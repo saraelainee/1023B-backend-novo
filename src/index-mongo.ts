@@ -1,21 +1,28 @@
-import express, { Request, Response, NextFunction } from 'express'
+import express from 'express'
 import 'dotenv/config'
+import cors from 'cors'
+// Importa as 3 rotas
 import rotasNaoAutenticadas from './rotas/rotas-nao-autenticadas.js'
 import rotasAutenticadas from './rotas/rotas-autenticadas.js'
+import rotasAdmin from './rotas/rotas-admin.js' // ADICIONADO
 import Auth from './middlewares/auth.js'
-import cors from 'cors'
+
 const app = express()
 app.use(cors())
-
 app.use(express.json())
 
-
-// Usando as rotas definidas em rotas.ts
+// Rotas públicas
 app.use(rotasNaoAutenticadas)
+
+// Middleware de Autenticação - Tudo abaixo disto exigirá token
 app.use(Auth)
+
+// Rotas de usuário autenticado
 app.use(rotasAutenticadas)
 
-// Criando o servidor na porta 8000 com o express
-app.listen(8000, () => {
-    console.log('Server is running on port 8000')
+// Rotas de administrador autenticado
+app.use(rotasAdmin) // ADICIONADO
+
+app.listen(process.env.PORT || 8000, () => {
+    console.log(`Servidor rodando na porta ${process.env.PORT || 8000}`)
 })

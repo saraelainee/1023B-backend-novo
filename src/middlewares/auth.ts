@@ -1,30 +1,56 @@
-//Criar um middleware que bloqueia tudo
 import jwt from 'jsonwebtoken'
 import { Request, Response, NextFunction } from "express";
+
+// Interface atualizada para incluir 'role'
 interface AutenticacaoRequest extends Request {
-    usuarioId?:string;
+    usuarioId?: string;
+    role?: string; // ADICIONADO
 }
 
-function Auth(req:AutenticacaoRequest,res:Response,next:NextFunction){
-    console.log("Cheguei no middleware")
+// Função 'Auth' delas, modificada para pegar o 'role'
+function Auth(req: AutenticacaoRequest, res: Response, next: NextFunction) {
     const authHeaders = req.headers.authorization
-    console.log(authHeaders)
-    if(!authHeaders)
-        return res.status(401).json({mensagem:"Você não passou o token no Bearer"})
-    const token = authHeaders.split(" ")[1]!
+    if (!authHeaders)
+        return res.status(401).json({ mensagem: "Token (Bearer) não fornecido" })
+    
+    const token = authHeaders.split(" ")[1]
+    if (!token)
+        return res.status(401).json({ mensagem: "Token mal formatado" })
 
-    jwt.verify(token,process.env.JWT_SECRET!,(err,decoded)=>{
-        if(err){
-            console.log(err)
-            return res.status(401).json({mensagem:"Middleware erro token"})
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { usuarioId: string, role: string }; // ADICIONADO 'role'
+        
+        if (!decoded || !decoded.usuarioId) {
+             return res.status(401).json({ mensagem: "Token inválido ou expirado" });
         }
-        if(typeof decoded ==="string"||!decoded||!("usuarioId" in decoded)){
-            return res.status(401).json({mensagem:"Middleware erro decoded"})
-        }
-        req.usuarioId = decoded.usuarioId
-        next()
-    })
 
+        req.usuarioId = decoded.usuarioId;
+        req.role = decoded.role; // ADICIONADO
+        next();
+
+    } catch (err) {
+        return res.status(401).json({ mensagem: "Token inválido ou expirado" });
+    }
 }
+
+// Sua função de autorização (copiada do seu 'auth.ts' original)
+const authorizeRoles = (...roles: string[]) => {
+    return (req: AutenticacaoRequest, res: Response, next: NextFunction) => {
+        if (!req.role || !roles.includes(req.role)) {
+            return res.status(403).json({
+                success: false,
+                message: "Acesso negado. Você não tem permissão para este recurso."
+            });
+        }
+        next();
+    };
+};
+
+// ================== CORREÇÃO AQUI ==================
+// Exporta os valores
+export { Auth, authorizeRoles };
+// Exporta o tipo separadamente
+export type { AutenticacaoRequest };
+// ===================================================
 
 export default Auth;
