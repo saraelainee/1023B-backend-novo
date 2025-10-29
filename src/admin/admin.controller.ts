@@ -1,14 +1,12 @@
-// ARQUIVO: admin.controller.ts
 import { Request, Response } from "express";
 import { db } from "../database/banco-mongo.js"; 
 import { ObjectId } from "mongodb";
 
 class AdminController {
 
-    // MÉTODO (getCartAnalytics) - CORRIGIDO (Inconsistência de ID)
+
     async getCartAnalytics(req: Request, res: Response) {
         try {
-            // CORREÇÃO: O campo é 'usuarioId'
             const activeUsers = await db.collection('carrinhos').distinct('usuarioId'); 
             const activeUsersCount = activeUsers.length;
 
@@ -49,7 +47,7 @@ class AdminController {
                 { $unwind: '$items' },
                 {
                     $group: {
-                        _id: '$usuarioId', // CORREÇÃO: O campo é 'usuarioId'
+                        _id: '$usuarioId', 
                         cartCount: { $sum: 1 },
                         lastActive: { $max: '$updatedAt' },
                         totalSpent: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
@@ -58,8 +56,8 @@ class AdminController {
                 {
                     $lookup: {
                         from: 'usuarios', 
-                        localField: '_id', // _id (que é o usuarioId do $group anterior)
-                        foreignField: '_id', // _id da coleção 'usuarios'
+                        localField: '_id',
+                        foreignField: '_id', 
                         as: 'user'
                     }
                 },
@@ -103,8 +101,8 @@ async listarTodosOsCarrinhos(req: Request, res: Response) {
         try {
             const carrinhos = await db.collection('carrinhos').aggregate([
                 {
-                    // PASSO 1: Criar um novo campo 'usuarioObjId'
-                    // Ele tenta converter o 'usuarioId' (que pode ser string) para ObjectId.
+                    // Novo campo 'usuarioObjId'
+                    // Tenta converter o 'usuarioId' (que pode ser string) para ObjectId.
                     $addFields: {
                         usuarioObjId: {
                             $cond: {
@@ -153,7 +151,7 @@ async listarTodosOsCarrinhos(req: Request, res: Response) {
 
         } catch (error) {
             console.error('Erro ao listar todos os carrinhos (admin):', error);
-            // Isso envia um erro 500, mas agora com uma mensagem clara
+            // Isso envia um erro 500
             res.status(500).json({ 
                 success: false, 
                 message: 'Erro interno ao buscar carrinhos. Verifique o log do servidor.',
@@ -163,9 +161,9 @@ async listarTodosOsCarrinhos(req: Request, res: Response) {
         }
     }
 
-    // NOVO MÉTODO - TAREFA DA SARA (Admin: Deletar carrinho por ID do *carrinho*)
+    //TAREFA DA SARA (Admin: Deletar carrinho por ID do carrinho)
     async deletarCarrinhoPorId(req: Request, res: Response) {
-        // O ID aqui é o ID do *carrinho*, não do usuário
+        // id do carrinho
         const { id } = req.params; 
 
         if (!ObjectId.isValid(id!)) {

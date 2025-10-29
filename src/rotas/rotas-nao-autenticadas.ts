@@ -1,4 +1,3 @@
-// ARQUIVO: rotas-nao-autenticadas.ts
 import {Router} from 'express'
 
 import produtosController from '../produtos/produtos.controller.js'
@@ -12,7 +11,7 @@ rotas.post('/login',usuariosController.login)
 
 // --- Rotas Públicas de Produto ---
 // ADICIONADO: Permite que visitantes (sem login) vejam os produtos
-// Atende à Tarefa da Laísa (filtragem) e Lorena (listar) para o público
+// Tarefa da Laísa (filtragem) e Lorena (listar) para o público
 rotas.get('/produtos', produtosController.listar) 
 
 

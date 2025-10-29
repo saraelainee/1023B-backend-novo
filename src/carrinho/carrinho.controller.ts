@@ -1,18 +1,16 @@
-// ARQUIVO: carrinho.controller.ts
 import { Request, Response } from "express";
-import { ObjectId } from "bson"; // Importado corretamente
+import { ObjectId } from "bson";
 import { db } from "../database/banco-mongo.js";
 import { AutenticacaoRequest } from "../middlewares/auth.js"; 
 
-// Interfaces (Mantidas)
 interface ItemCarrinho {
-    produtoId: string; // Mantido como string, pois é o ID do produto
+    produtoId: string; 
     quantidade: number;
     precoUnitario: number;
     nome: string;
 }
 interface Carrinho {
-    usuarioId: ObjectId; // CORRIGIDO: Deve ser ObjectId
+    usuarioId: ObjectId; 
     itens: ItemCarrinho[];
     dataAtualizacao: Date;
     total: number;
@@ -20,26 +18,23 @@ interface Carrinho {
 
 class CarrinhoController {
     
-    // MÉTODO (listar) - CORRIGIDO (Inconsistência de ID)
+    // MÉTODO (listar)
     async listar(req: AutenticacaoRequest, res: Response) {
+        console.log("Oi eu sou o listar carrinho!");
         try {
             const { usuarioId } = req; // Este ID vem do Token (string)
             if (!usuarioId) {
                 return res.status(401).json({ success: false, message: "Usuário não autenticado" });
             }
 
-            // ... (Lógica de filtros mantida) ...
             const { 
                 name, minPrice, maxPrice, minQuantity, maxQuantity,
                 category, sortBy = 'name', sortOrder = 'asc'
             } = req.query;
 
-            // CORREÇÃO: Converter a string 'usuarioId' para ObjectId
-            // CORREÇÃO: O campo no banco é 'usuarioId', não 'userId'
             const filter: any = { usuarioId: new ObjectId(usuarioId) }; 
             const itemFilters: any[] = [];
             
-            // ... (Restante da lógica de agregação mantida) ...
             if (name) itemFilters.push({ 'items.name': { $regex: name, $options: 'i' } });
             if (category) itemFilters.push({ 'items.category': { $regex: category, $options: 'i' } });
             if (minPrice || maxPrice) {
@@ -68,11 +63,11 @@ class CarrinhoController {
             pipeline.push({
                 $group: {
                     _id: '$_id',
-                    userId: { $first: '$usuarioId' }, // CORREÇÃO: campo é 'usuarioId'
+                    userId: { $first: '$usuarioId' },
                     items: { $push: '$items' },
                     total: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
-                    createdAt: { $first: '$createdAt' }, // Assumindo que você tem esses campos
-                    updatedAt: { $first: '$updatedAt' } // Assumindo que você tem esses campos
+                    createdAt: { $first: '$createdAt' }, 
+                    updatedAt: { $first: '$updatedAt' } 
                 }
             });
             
@@ -90,16 +85,16 @@ class CarrinhoController {
         }
     }
 
-    // MÉTODO (adicionarItem) - CORRIGIDO (Inconsistência de ID)
+    // MÉTODO (adicionarItem)
     async adicionarItem(req: AutenticacaoRequest, res: Response) {
         const { produtoId, quantidade } = req.body;
         
         if (!req.usuarioId)
             // MENSAGEM AMIGÁVEL (TAREFA SARA)
             return res.status(401).json({ mensagem: "Acesso negado. Faça login para adicionar itens." })
-        
-        // CORREÇÃO: Converter o ID do usuário (string) para ObjectId
-        const usuarioObjId = new ObjectId(req.usuarioId);
+
+
+          const usuarioObjId = new ObjectId(req.usuarioId);
         
         if (!ObjectId.isValid(produtoId)) {
             // MENSAGEM AMIGÁVEL (TAREFA SARA)
@@ -115,12 +110,12 @@ class CarrinhoController {
         const precoUnitario = (produto as any).preco; 
         const nome = (produto as any).nome;
         
-        // CORREÇÃO: Buscar o carrinho usando o ObjectId do usuário
+        // Buscar o carrinho usando o ObjectId do usuário
         const carrinho = await db.collection<Carrinho>("carrinhos").findOne({ usuarioId: usuarioObjId });
         
         if (!carrinho) {
             const novoCarrinho: Carrinho = {
-                usuarioId: usuarioObjId, // CORREÇÃO: Salvar como ObjectId
+                usuarioId: usuarioObjId,
                 itens: [{ produtoId: produtoId, quantidade: quantidade, precoUnitario: precoUnitario, nome: nome }],
                 dataAtualizacao: new Date(),
                 total: precoUnitario * quantidade
@@ -140,7 +135,7 @@ class CarrinhoController {
         carrinho.dataAtualizacao = new Date();
         
         await db.collection("carrinhos").updateOne(
-            { usuarioId: usuarioObjId }, // CORREÇÃO: Atualizar usando o ObjectId
+            { usuarioId: usuarioObjId }, 
             { $set: { itens: carrinho.itens, total: carrinho.total, dataAtualizacao: carrinho.dataAtualizacao } }
         );
         return res.status(200).json(carrinho);
@@ -202,26 +197,26 @@ class CarrinhoController {
         return res.status(200).json(carrinho);
     }
     
-    // MÉTODO (removerItem) - CORRIGIDO (Inconsistência de ID)
-    // TAREFA DA SARA (backend) - Este método já existia e atende à tarefa.
+
+    // TAREFA DA SARA (Remover Item do Carrinho)
     async removerItem(req: AutenticacaoRequest, res: Response) {
         const { produtoId } = req.body;
         
         if (!req.usuarioId)
             return res.status(401).json({ mensagem: "Acesso negado. Faça login para remover itens." })
         
-        // CORREÇÃO: Converter para ObjectId
+        // Converter para ObjectId
         const usuarioObjId = new ObjectId(req.usuarioId);
         const carrinho = await db.collection<Carrinho>("carrinhos").findOne({ usuarioId: usuarioObjId });
         
         if (!carrinho) {
-            // MENSAGEM AMIGÁVEL (TAREFA SARA)
+            // MENSAGEM AMIGÁVEL BLA BLA BLA (TAREFA SARA)
             return res.status(404).json({ mensagem: "Carrinho não encontrado" });
         }
 
         const itemIndex = carrinho.itens.findIndex(item => item.produtoId === produtoId);
         if (itemIndex === -1) {
-            // MENSAGEM AMIGÁVEL (TAREFA SARA)
+            // MENSAGEM AMIGÁVEL BLA BLA BLA (TAREFA SARA)
             return res.status(404).json({ mensagem: "Item não encontrado no carrinho" });
         }
         
@@ -230,19 +225,18 @@ class CarrinhoController {
         carrinho.dataAtualizacao = new Date();
         
         await db.collection("carrinhos").updateOne(
-            { usuarioId: usuarioObjId }, // CORREÇÃO: Atualiza usando ObjectId
+            { usuarioId: usuarioObjId }, // Atualiza usando ObjectId
             { $set: { itens: carrinho.itens, total: carrinho.total, dataAtualizacao: carrinho.dataAtualizacao } }
         );
         return res.status(200).json(carrinho);
     }
     
-    // MÉTODO (remover) - CORRIGIDO (Inconsistência de ID)
-    // TAREFA DA LAÍSA (backend) - Este método já existia e atende à tarefa (usuário logado deleta o *próprio* carrinho).
+    // MÉTODO REMOVER (TAREFA DA LAÍSA)
     async remover(req: AutenticacaoRequest, res: Response) {
         if (!req.usuarioId)
             return res.status(401).json({ mensagem: "Acesso negado. Faça login para remover seu carrinho." })
         
-        // CORREÇÃO: Converter para ObjectId
+        // Converter para ObjectId
         const usuarioObjId = new ObjectId(req.usuarioId);
         const resultado = await db.collection("carrinhos").deleteOne({ usuarioId: usuarioObjId });
         

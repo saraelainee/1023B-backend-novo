@@ -1,19 +1,18 @@
-// ARQUIVO: produtos.controller.ts
 import { Request, Response } from 'express'
 import { db } from '../database/banco-mongo.js'
-import { ObjectId } from 'mongodb' // Importar ObjectId
+import { ObjectId } from 'mongodb'
 
 class ProdutosController {
     
-    // MÉTODO EXISTENTE (adicionar) - Será usado pela Laísa (Admin)
+    // MÉTODO EXISTENTE (adicionar) - Laísa (Admin)
     async adicionar(req: Request, res: Response) {
-        const { nome, preco, urlfoto, descricao, categoria } = req.body // Adicionado 'categoria'
+        const { nome, preco, urlfoto, descricao, categoria } = req.body 
         
         // Adicionada 'categoria' à validação
         if (!nome || !preco || !urlfoto || !descricao || !categoria)
             return res.status(400).json({ error: "Nome, preço, urlfoto, descrição e categoria são obrigatórios" })
 
-        const produto = { nome, preco, urlfoto, descricao, categoria } // Adicionado 'categoria'
+        const produto = { nome, preco, urlfoto, descricao, categoria }
         
         try {
             const resultado = await db.collection('produtos').insertOne(produto)
@@ -24,7 +23,7 @@ class ProdutosController {
         }
     }
 
-    // MÉTODO (listar) - MODIFICADO PARA LAÍSA (Filtragem)
+    // MÉTODO (listar) - LAÍSA
     async listar(req: Request, res: Response) {
         // Pega 'nome' e 'categoria' da query string (ex: /produtos?nome=mouse&categoria=perifericos)
         const { nome, categoria } = req.query;
@@ -51,7 +50,7 @@ class ProdutosController {
         }
     }
 
-    // NOVO MÉTODO - TAREFA DA LAÍSA (Admin: Atualizar Produto)
+    // LAÍSA (Admin: Atualizar Produto)
     async atualizar(req: Request, res: Response) {
         const { id } = req.params // Pega o ID do produto pela URL
         const { nome, preco, urlfoto, descricao, categoria } = req.body // Pega os novos dados
@@ -69,7 +68,7 @@ class ProdutosController {
             const resultado = await db.collection('produtos').updateOne(
                 { _id: new ObjectId(id) }, // Filtro: encontra o produto pelo ID
                 { 
-                    $set: { // Novos dados
+                    $set: { 
                         nome, 
                         preco, 
                         urlfoto, 
@@ -91,7 +90,7 @@ class ProdutosController {
         }
     }
 
-    // NOVO MÉTODO - TAREFA DA VÂNIA (Admin: Deletar Produto)
+    // VÂNIA (Admin: Deletar Produto)
     async deletar(req: Request, res: Response) {
         const { id } = req.params; // Pega o ID do produto pela URL
 

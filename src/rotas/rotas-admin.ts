@@ -1,4 +1,3 @@
-// ARQUIVO: rotas-admin.ts
 import { Router } from 'express'
 import usuariosController from '../usuarios/usuarios.controller.js'
 import adminController from '../admin/admin.controller.js'

@@ -18,14 +18,14 @@ function Auth(req: AutenticacaoRequest, res: Response, next: NextFunction) {
         return res.status(401).json({ mensagem: "Token mal formatado" })
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { usuarioId: string, role: string }; // ADICIONADO 'role'
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { usuarioId: string, role: string }; 
         
         if (!decoded || !decoded.usuarioId) {
              return res.status(401).json({ mensagem: "Token inválido ou expirado" });
         }
 
         req.usuarioId = decoded.usuarioId;
-        req.role = decoded.role; // ADICIONADO
+        req.role = decoded.role; 
         next();
 
     } catch (err) {
@@ -33,7 +33,7 @@ function Auth(req: AutenticacaoRequest, res: Response, next: NextFunction) {
     }
 }
 
-// Sua função de autorização (copiada do seu 'auth.ts' original)
+//Função de autorização
 const authorizeRoles = (...roles: string[]) => {
     return (req: AutenticacaoRequest, res: Response, next: NextFunction) => {
         if (!req.role || !roles.includes(req.role)) {
@@ -46,11 +46,11 @@ const authorizeRoles = (...roles: string[]) => {
     };
 };
 
-// ================== CORREÇÃO AQUI ==================
+
 // Exporta os valores
 export { Auth, authorizeRoles };
 // Exporta o tipo separadamente
 export type { AutenticacaoRequest };
-// ===================================================
+
 
 export default Auth;
