@@ -50,10 +50,10 @@ class UsuariosController {
         if (!senhaValida) return res.status(401).json({ mensagem: "Senha Incorreta!" })
 
         const token = jwt.sign(
-            { usuarioId: usuario._id, role: usuario.role }, 
-            process.env.JWT_SECRET!, 
+            { usuarioId: usuario._id, role: usuario.role, nome: usuario.nome }, // LINHA NOVA
+            process.env.JWT_SECRET!,
             { expiresIn: '1d' }
-        )
+        )   
         
         res.status(200).json({
             success: true,
