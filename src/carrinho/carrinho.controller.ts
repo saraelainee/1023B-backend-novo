@@ -21,8 +21,12 @@ class CarrinhoController {
     // MÉTODO (listar)
     async listar(req: AutenticacaoRequest, res: Response) {
         console.log("Oi eu sou o listar carrinho!");
+        
         try {
             const { usuarioId } = req; // Este ID vem do Token (string)
+
+            console.log("ID do usuário autenticado:", usuarioId);
+
             if (!usuarioId) {
                 return res.status(401).json({ success: false, message: "Usuário não autenticado" });
             }
@@ -36,7 +40,9 @@ class CarrinhoController {
             const itemFilters: any[] = [];
             
             if (name) itemFilters.push({ 'items.name': { $regex: name, $options: 'i' } });
+
             if (category) itemFilters.push({ 'items.category': { $regex: category, $options: 'i' } });
+
             if (minPrice || maxPrice) {
                 const priceFilter: any = {};
                 if (minPrice) priceFilter.$gte = parseFloat(minPrice as string);
@@ -49,14 +55,17 @@ class CarrinhoController {
                 if (maxQuantity) quantityFilter.$lte = parseInt(maxQuantity as string);
                 itemFilters.push({ 'items.quantity': quantityFilter });
             }
+
             const pipeline: any[] = [
                 { $match: filter },
                 { $unwind: '$items' },
                 { $match: {} } 
             ];
+
             if (itemFilters.length > 0) {
                 pipeline[2].$match.$and = itemFilters;
             }
+
             const sort: any = {};
             sort[`items.${sortBy}`] = sortOrder === 'asc' ? 1 : -1;
             pipeline.push({ $sort: sort });
@@ -71,7 +80,8 @@ class CarrinhoController {
                 }
             });
             
-            const result = await db.collection('carrinhos').aggregate(pipeline).toArray();
+            const result = await db.collection('carrinhos').find<Carrinho>({ usuarioId: new ObjectId(usuarioId) }).toArray();
+            console.log("Resultado da agregação do carrinho:", result);
             
             return res.status(200).json({
                 success: true,
