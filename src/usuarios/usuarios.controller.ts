@@ -21,7 +21,7 @@ class UsuariosController {
         
         const existingUser = await db.collection('usuarios').findOne({ email });
         if (existingUser) {
-            return res.status(409).json({ success: false, message: "E-mail já cadastrado" });
+            return res.status(409).json({message: "E-mail já cadastrado" });
         }
 
         const senhaCriptografada = await bcrypt.hash(senha, 10)
