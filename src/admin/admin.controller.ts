@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { db } from "../database/banco-mongo.js"; 
+import { db } from "../database/banco-mongo.js";
 import { ObjectId } from "mongodb";
 
 class AdminController {
@@ -7,17 +7,12 @@ class AdminController {
 
     async getCartAnalytics(req: Request, res: Response) {
         try {
-            const activeUsers = await db.collection('carrinhos').distinct('usuarioId'); 
+            // Usuários ativos (com carrinhos)
+            const activeUsers = await db.collection('carrinhos').distinct('usuarioId');
             const activeUsersCount = activeUsers.length;
 
+            // Estatísticas dos carrinhos
             const cartValues = await db.collection('carrinhos').aggregate([
-                { $unwind: '$items' },
-                { 
-                    $group: {
-                        _id: '$_id',
-                        total: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
-                    } 
-                },
                 {
                     $group: {
                         _id: null,
@@ -28,36 +23,40 @@ class AdminController {
                 }
             ]).toArray();
 
+            // Itens populares
             const popularItems = await db.collection('carrinhos').aggregate([
-                { $unwind: '$items' },
+                { $unwind: '$itens' },
                 {
                     $group: {
-                        _id: '$items.productId',
-                        name: { $first: '$items.name' },
-                        category: { $first: '$items.category' },
-                        totalQuantity: { $sum: '$items.quantity' },
-                        totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
+                        _id: '$itens.produtoId',
+                        name: { $first: '$itens.nome' },
+                        totalQuantity: { $sum: '$itens.quantidade' },
+                        totalRevenue: {
+                            $sum: {
+                                $multiply: ['$itens.precoUnitario', '$itens.quantidade']
+                            }
+                        }
                     }
                 },
                 { $sort: { totalQuantity: -1 } },
                 { $limit: 10 }
             ]).toArray();
 
+            // Top usuários
             const userActivity = await db.collection('carrinhos').aggregate([
-                { $unwind: '$items' },
                 {
                     $group: {
-                        _id: '$usuarioId', 
+                        _id: '$usuarioId',
                         cartCount: { $sum: 1 },
-                        lastActive: { $max: '$updatedAt' },
-                        totalSpent: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
+                        lastActive: { $max: '$dataAtualizacao' },
+                        totalSpent: { $sum: '$total' }
                     }
                 },
                 {
                     $lookup: {
-                        from: 'usuarios', 
+                        from: 'usuarios',
                         localField: '_id',
-                        foreignField: '_id', 
+                        foreignField: '_id',
                         as: 'user'
                     }
                 },
@@ -81,23 +80,29 @@ class AdminController {
                 data: {
                     activeUsers: {
                         count: activeUsersCount,
-                        // Mapeia os ObjectIds para Strings para visualização
-                        users: activeUsers.map(id => id.toString()) 
+                        users: activeUsers.map(id => id.toString())
                     },
                     cartStatistics: cartValues[0] || { totalValue: 0, avgCartValue: 0, cartCount: 0 },
                     popularItems,
                     topUsers: userActivity
-                }
+                },
+                message: 'Analytics fetched successfully'
             });
 
         } catch (error) {
-            console.error('Error fetching cart analytics:', error);
-            return res.status(500).json({ success: false, message: 'Erro ao buscar estatísticas' });
+            if (error instanceof Error) {
+                console.error('Error fetching cart analytics:', error);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Erro ao buscar estatísticas',
+                    error: error.message
+                });
+            }
         }
     }
 
     // NOVO MÉTODO - TAREFA DA SARA (Admin: Listar todos os carrinhos com nome do usuário)
-async listarTodosOsCarrinhos(req: Request, res: Response) {
+    async listarTodosOsCarrinhos(req: Request, res: Response) {
         try {
             const carrinhos = await db.collection('carrinhos').aggregate([
                 {
@@ -107,11 +112,11 @@ async listarTodosOsCarrinhos(req: Request, res: Response) {
                         usuarioObjId: {
                             $cond: {
                                 // Se o 'usuarioId' for tipo 'string'
-                                if: { $eq: [{ $type: "$usuarioId" }, "string"] }, 
+                                if: { $eq: [{ $type: "$usuarioId" }, "string"] },
                                 // Então: converta para ObjectId
-                                then: { $toObjectId: "$usuarioId" }, 
+                                then: { $toObjectId: "$usuarioId" },
                                 // Senão: apenas use o valor (que já deve ser ObjectId)
-                                else: "$usuarioId" 
+                                else: "$usuarioId"
                             }
                         }
                     }
@@ -119,10 +124,10 @@ async listarTodosOsCarrinhos(req: Request, res: Response) {
                 {
                     // PASSO 2: Fazer o $lookup usando o novo campo 'usuarioObjId'
                     $lookup: {
-                        from: 'usuarios',         
+                        from: 'usuarios',
                         localField: 'usuarioObjId', // Usando o campo convertido
-                        foreignField: '_id',       
-                        as: 'dadosUsuario'       
+                        foreignField: '_id',
+                        as: 'dadosUsuario'
                     }
                 },
                 {
@@ -134,10 +139,10 @@ async listarTodosOsCarrinhos(req: Request, res: Response) {
                 },
                 {
                     $project: {
-                        _id: 1, 
+                        _id: 1,
                         total: 1,
                         dataAtualizacao: 1,
-                        quantidadeItens: { $size: '$itens' }, 
+                        quantidadeItens: { $size: '$itens' },
                         usuario: {
                             _id: '$dadosUsuario._id',
                             nome: '$dadosUsuario.nome',
@@ -152,11 +157,11 @@ async listarTodosOsCarrinhos(req: Request, res: Response) {
         } catch (error) {
             console.error('Erro ao listar todos os carrinhos (admin):', error);
             // Isso envia um erro 500
-            res.status(500).json({ 
-                success: false, 
+            res.status(500).json({
+                success: false,
                 message: 'Erro interno ao buscar carrinhos. Verifique o log do servidor.',
                 // @ts-ignore
-                error: error.message 
+                error: error.message
             });
         }
     }
@@ -164,7 +169,7 @@ async listarTodosOsCarrinhos(req: Request, res: Response) {
     //TAREFA DA SARA (Admin: Deletar carrinho por ID do carrinho)
     async deletarCarrinhoPorId(req: Request, res: Response) {
         // id do carrinho
-        const { id } = req.params; 
+        const { id } = req.params;
 
         if (!ObjectId.isValid(id!)) {
             return res.status(400).json({ success: false, message: "ID de carrinho inválido" });
