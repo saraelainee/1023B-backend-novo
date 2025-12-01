@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import { ObjectId } from "bson";
 import { db } from "../database/banco-mongo.js";
 import { AutenticacaoRequest } from "../middlewares/auth.js"; 
+import Stripe from 'stripe';
+
+const stripe = new Stripe('sk_test_51SXjtDKf3HU4ogeyKd63PqX0PMJN1ikfd4voiOek7jPbz02j0zoFHeqdIUwYVjGOXiaL2OwgrpLWYrMJiOmchYaZ00d7pWCryL');
 
 interface ItemCarrinho {
     produtoId: string; 
@@ -255,6 +258,55 @@ class CarrinhoController {
             return res.status(404).json({ mensagem: "Carrinho não encontrado" });
         }
         return res.status(200).json({ mensagem: "Carrinho removido com sucesso" });
+    }
+    async criarSessaoCheckout(req: AutenticacaoRequest, res: Response) {
+        try {
+            const { usuarioId } = req;
+            if (!usuarioId) return res.status(401).json({ message: "Não autorizado" });
+
+            // 1. Busca o carrinho do usuário para garantir o valor correto
+            const carrinho = await db.collection("carrinhos").findOne({ 
+                usuarioId: new ObjectId(usuarioId) 
+            });
+
+            if (!carrinho || !carrinho.itens || carrinho.itens.length === 0) {
+                return res.status(400).json({ message: "Seu carrinho está vazio." });
+            }
+
+            // 2. Calcula o total em CENTAVOS (O Stripe trabalha com inteiros: R$ 10,00 = 1000)
+            // A gente recalcula aqui para ninguém fraudar o valor vindo do front
+            const totalEmCentavos = Math.round(carrinho.total * 100);
+
+            // 3. Cria a sessão no Stripe
+            const session = await stripe.checkout.sessions.create({
+                ui_mode: 'embedded',
+                payment_method_types: ['card'], // Aceitar cartão
+                line_items: [
+                    {
+                        // Aqui está o segredo: price_data permite valor dinâmico
+                        price_data: {
+                            currency: 'brl',
+                            product_data: {
+                                name: 'Total do Carrinho',
+                                description: `Pedido com ${carrinho.itens.length} itens`,
+                            },
+                            unit_amount: totalEmCentavos, // O valor calculado do banco
+                        },
+                        quantity: 1,
+                    },
+                ],
+                mode: 'payment',
+                // URL para onde o usuário volta após pagar (ajuste para sua rota do front)
+                return_url: `http://localhost:5173/retorno?session_id={CHECKOUT_SESSION_ID}`,
+            });
+
+            // 4. Retorna o segredo para o Front montar o formulário
+            return res.json({ clientSecret: session.client_secret });
+
+        } catch (error) {
+            console.error("Erro Stripe:", error);
+            return res.status(500).json({ error: "Erro ao criar pagamento" });
+        }
     }
 }
 

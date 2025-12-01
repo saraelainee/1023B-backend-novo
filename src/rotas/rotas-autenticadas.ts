@@ -16,4 +16,6 @@ rotas.get('/carrinho', carrinhoController.listar)
 // Rota pega o ID do token (deletar o *próprio* carrinho)
 rotas.delete('/carrinhoDeleta', carrinhoController.remover) // TAREFA LAÍSA (deletar próprio carrinho)
 
+rotas.post('/carrinho/checkout', carrinhoController.criarSessaoCheckout);
+
 export default rotas
