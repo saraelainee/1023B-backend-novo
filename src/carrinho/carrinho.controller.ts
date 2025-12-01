@@ -3,8 +3,9 @@ import { ObjectId } from "bson";
 import { db } from "../database/banco-mongo.js";
 import { AutenticacaoRequest } from "../middlewares/auth.js"; 
 import Stripe from 'stripe';
+import 'dotenv/config'
 
-const stripe = new Stripe('sk_test_51SXjtDKf3HU4ogeyKd63PqX0PMJN1ikfd4voiOek7jPbz02j0zoFHeqdIUwYVjGOXiaL2OwgrpLWYrMJiOmchYaZ00d7pWCryL');
+const stripe = new Stripe(String(process.env.STRIPE_SECRET_KEY));
 
 interface ItemCarrinho {
     produtoId: string; 
