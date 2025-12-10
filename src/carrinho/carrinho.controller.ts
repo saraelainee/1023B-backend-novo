@@ -362,7 +362,7 @@ class CarrinhoController {
                 ],
                 mode: 'payment',
                 // URL para onde o usuário volta após pagar (ajuste para sua rota do front)
-                return_url: `http://localhost:5173/carrinho`,
+                return_url: `/carrinho`,
             });
 
             // 4. Retorna o segredo para o Front montar o formulário
