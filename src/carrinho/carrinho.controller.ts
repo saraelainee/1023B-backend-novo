@@ -361,7 +361,7 @@ class CarrinhoController {
                 ],
                 mode: 'payment',
                 // URL para onde o usuário volta após pagar (ajuste para sua rota do front)
-                return_url: `${origin}/carrinho?session_id={CHECKOUT_SESSION_ID}`,
+                return_url: `${origin}/`,
             });
 
             return res.json({ clientSecret: session.client_secret });
