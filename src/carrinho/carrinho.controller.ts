@@ -324,6 +324,7 @@ class CarrinhoController {
         }
         return res.status(200).json({ mensagem: "Carrinho removido com sucesso" });
     }
+
     async criarSessaoCheckout(req: AutenticacaoRequest, res: Response) {
         try {
             const { usuarioId } = req;
@@ -338,11 +339,9 @@ class CarrinhoController {
                 return res.status(400).json({ message: "Seu carrinho está vazio." });
             }
 
-            // 2. Calcula o total em CENTAVOS (O Stripe trabalha com inteiros: R$ 10,00 = 1000)
-            // A gente recalcula aqui para ninguém fraudar o valor vindo do front
             const totalEmCentavos = Math.round(carrinho.total * 100);
 
-            // 3. Cria a sessão no Stripe
+            const origin = req.headers.origin || 'http://localhost:5173';
             const session = await stripe.checkout.sessions.create({
                 ui_mode: 'embedded',
                 payment_method_types: ['card'], // Aceitar cartão
@@ -362,15 +361,17 @@ class CarrinhoController {
                 ],
                 mode: 'payment',
                 // URL para onde o usuário volta após pagar (ajuste para sua rota do front)
-                return_url: `/carrinho`,
+                return_url: `${origin}/carrinho?session_id={CHECKOUT_SESSION_ID}`,
             });
 
-            // 4. Retorna o segredo para o Front montar o formulário
             return res.json({ clientSecret: session.client_secret });
 
-        } catch (error) {
-            console.error("Erro Stripe:", error);
-            return res.status(500).json({ error: "Erro ao criar pagamento" });
+        } catch (error: any) {
+            console.error("Erro Stripe Detalhado:", error.message, error);
+            return res.status(500).json({
+                error: "Erro ao criar pagamento",
+                details: error.message
+            });
         }
     }
 }
